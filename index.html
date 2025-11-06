@@ -795,39 +795,34 @@ const professionalData = {
 
 const nomesFemininos = ['Alessandra', 'Cris', 'Lidia', 'Gabriela', 'Laura', 'Rose', 'Bruna', 'Achilley'];
 
-// Identifica o profissional; agora exige DDD === '11' se usuário informar DDD
+// Identifica o profissional
 function identifyProfessional(rawPhone) {
     const cleaned = standardizePhoneNumber(rawPhone);
-
     if (!cleaned) return null;
 
-    // Caso o usuário tenha informado DDD (número com 10 ou mais dígitos)
-    // interpretamos os 2 primeiros dígitos como DDD (padrão BR)
+    // Se o número tiver DDD (>=10 dígitos)
     if (cleaned.length >= 10) {
         const ddd = cleaned.slice(0, 2);
-        const numberPart = cleaned.slice(2); // parte após o DDD
+        const numberPart = cleaned.slice(2);
 
-        // Se DDD for diferente de 11, rejeita imediatamente
+        // ✅ Aceita apenas DDD 11
         if (ddd !== '11') {
-            return { invalidDDD: ddd }; // sinaliza DDD inválido
+            return { invalidDDD: ddd };
         }
 
-        // procura correspondência usando a parte sem DDD
+        // procura o número sem DDD
         if (professionalData[numberPart]) return professionalData[numberPart];
-
-        // também tenta última parte de 8 dígitos caso a base use 8 dígitos
         const last8 = numberPart.slice(-8);
         return professionalData[last8] || null;
     }
 
-    // Caso sem DDD (8 ou 9 dígitos), busca direta
+    // Se não tiver DDD, busca normal
     if (professionalData[cleaned]) return professionalData[cleaned];
-    // tenta com últimos 8 dígitos (caso a base tenha 8 dígitos)
     const last8 = cleaned.slice(-8);
     return professionalData[last8] || null;
 }
 
-// Função de validação (rápida, sem rolagem)
+// Função de validação
 function validarNumero() {
     const inputEl = document.getElementById('phoneNumber');
     const resultEl = document.getElementById('validationResult');
@@ -842,11 +837,11 @@ function validarNumero() {
 
     const found = identifyProfessional(raw);
 
-    // Caso identificador devolva objeto com invalidDDD
-    if (found && typeof found === 'object' && found.invalidDDD) {
+    // DDD inválido
+    if (found && found.invalidDDD) {
         resultEl.className = 'validation-result validation-error';
         resultEl.classList.remove('hidden');
-        resultEl.innerHTML = `❌ DDD inválido: ${found.invalidDDD}. Apenas DDD "11" é aceito.`;
+        resultEl.innerHTML = `❌ DDD ${found.invalidDDD} não é autorizado. Apenas números com DDD 11 são aceitos.`;
         return;
     }
 
@@ -869,16 +864,15 @@ function validarNumero() {
                 resultEl.innerHTML = `✅ Número institucional do departamento de ${found.department} da JD Business Academy.<br><small>Contato institucional verificado.</small>`;
             }
         } else {
-            // fallback genérico (caso algum registro venha sem role/department)
             resultEl.innerHTML = `✅ Número reconhecido: <strong>${found.name || 'Profissional'}</strong>.<br><small>Registro JD Business Academy.</small>`;
         }
     } else {
         resultEl.className = 'validation-result validation-error';
-        resultEl.innerHTML = `❌ Número não autorizado.<br><small>Verifique o DDD e os dígitos do número ou entre em contato conosco.</small>`;
+        resultEl.innerHTML = `❌ Número não autorizado.<br><small>Verifique o DDD (deve ser 11) e os dígitos do número.</small>`;
     }
 }
 
-// Mantém rolagem suave do menu (não interfere na validação)
+// Rolagem suave (não interfere na validação)
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', e => {
         e.preventDefault();
@@ -890,5 +884,6 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
 
 </body>
 </html>
+
 
 
