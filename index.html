@@ -752,17 +752,19 @@
     </footer>
 
 <script>
-// ⚙️ Padroniza número de telefone
+// Padroniza número de telefone
 function standardizePhoneNumber(number) {
-    let cleaned = number.replace(/\D/g, '');
-    if (cleaned.startsWith('55')) cleaned = cleaned.substring(2);
-    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
-    if (cleaned.startsWith('11') && cleaned.length > 9) cleaned = cleaned.substring(2);
+    let cleaned = (number || '').replace(/\D/g, '');
+    // Remove código do país (55)
+    if (cleaned.startsWith('55')) cleaned = cleaned.slice(2);
+    // Remove zero à esquerda ocasional
+    if (cleaned.startsWith('0')) cleaned = cleaned.slice(1);
     return cleaned;
 }
 
-// 📞 Base de dados
+// Base de dados
 const professionalData = {
+    // SDRs
     '970396542': { name: 'Cris', role: 'SDR' },
     '951072047': { name: 'Vitor', role: 'SDR' },
     '977275276': { name: 'Luram', role: 'SDR' },
@@ -773,15 +775,18 @@ const professionalData = {
     '51044616': { name: 'Rose', role: 'SDR' },
     '51921284': { name: 'Bruna', role: 'SDR' },
 
+    // Marketing / Comercial
     '987819893': { name: 'Thiago Vinicius', department: 'Marketing' },
     '948908136': { name: 'Guilherme Oliveira', department: 'Marketing' },
     '959615660': { name: 'Rodrigo Rocha', department: 'Comercial' },
 
+    // Closers
     '951072297': { name: 'Rafael', role: 'Closer' },
     '51967823': { name: 'Alessandra', role: 'Closer' },
     '51072036': { name: 'Gabriela', role: 'Closer' },
     '52865583': { name: 'Achilley', role: 'Closer' },
 
+    // Institucionais
     '42300014': { department: 'Avisos' },
     '35494346': { department: 'Comercial' },
     '975636636': { department: 'Marketing' },
@@ -790,49 +795,90 @@ const professionalData = {
 
 const nomesFemininos = ['Alessandra', 'Cris', 'Lidia', 'Gabriela', 'Laura', 'Rose', 'Bruna', 'Achilley'];
 
-// 🧠 Identifica o profissional pelo número
-function identifyProfessional(phone) {
-    const cleaned = standardizePhoneNumber(phone);
-    return professionalData[cleaned] || professionalData[cleaned.slice(-8)] || null;
+// Identifica o profissional; agora exige DDD === '11' se usuário informar DDD
+function identifyProfessional(rawPhone) {
+    const cleaned = standardizePhoneNumber(rawPhone);
+
+    if (!cleaned) return null;
+
+    // Caso o usuário tenha informado DDD (número com 10 ou mais dígitos)
+    // interpretamos os 2 primeiros dígitos como DDD (padrão BR)
+    if (cleaned.length >= 10) {
+        const ddd = cleaned.slice(0, 2);
+        const numberPart = cleaned.slice(2); // parte após o DDD
+
+        // Se DDD for diferente de 11, rejeita imediatamente
+        if (ddd !== '11') {
+            return { invalidDDD: ddd }; // sinaliza DDD inválido
+        }
+
+        // procura correspondência usando a parte sem DDD
+        if (professionalData[numberPart]) return professionalData[numberPart];
+
+        // também tenta última parte de 8 dígitos caso a base use 8 dígitos
+        const last8 = numberPart.slice(-8);
+        return professionalData[last8] || null;
+    }
+
+    // Caso sem DDD (8 ou 9 dígitos), busca direta
+    if (professionalData[cleaned]) return professionalData[cleaned];
+    // tenta com últimos 8 dígitos (caso a base tenha 8 dígitos)
+    const last8 = cleaned.slice(-8);
+    return professionalData[last8] || null;
 }
 
-// ⚡ Validação instantânea (sem rolagem, sem delay)
+// Função de validação (rápida, sem rolagem)
 function validarNumero() {
-    const input = document.getElementById('phoneNumber');
-    const result = document.getElementById('validationResult');
-    const value = input.value.trim();
+    const inputEl = document.getElementById('phoneNumber');
+    const resultEl = document.getElementById('validationResult');
+    const raw = (inputEl && inputEl.value) ? inputEl.value.trim() : '';
 
-    if (!value) {
-        result.className = 'validation-result validation-error';
-        result.innerHTML = '⚠️ Digite um número para validar.';
+    if (!raw) {
+        resultEl.className = 'validation-result validation-error';
+        resultEl.classList.remove('hidden');
+        resultEl.innerHTML = '⚠️ Digite um número para validar.';
         return;
     }
 
-    const prof = identifyProfessional(value);
-    result.classList.remove('hidden');
+    const found = identifyProfessional(raw);
 
-    if (prof) {
-        let artigo = nomesFemininos.includes(prof.name) ? 'a' : 'o';
-        result.className = 'validation-result validation-success';
+    // Caso identificador devolva objeto com invalidDDD
+    if (found && typeof found === 'object' && found.invalidDDD) {
+        resultEl.className = 'validation-result validation-error';
+        resultEl.classList.remove('hidden');
+        resultEl.innerHTML = `❌ DDD inválido: ${found.invalidDDD}. Apenas DDD "11" é aceito.`;
+        return;
+    }
 
-        if (prof.role === 'SDR') {
-            result.innerHTML = `✅ Est${artigo} é ${artigo} SDR <strong>${prof.name}</strong> da JD Business Academy.<br><small>Autorizado(a) para atendimento inicial.</small>`;
-        } else if (prof.role === 'Closer') {
-            result.innerHTML = `✅ Est${artigo} é ${artigo} Closer <strong>${prof.name}</strong> da JD Business Academy.<br><small>Autorizado(a) para fechamento de negócios.</small>`;
-        } else if (prof.department) {
-            if (prof.name) {
-                result.innerHTML = `✅ <strong>${prof.name}</strong> atua no departamento de ${prof.department}.<br><small>Contato oficial JD Business Academy.</small>`;
+    resultEl.classList.remove('hidden');
+
+    if (found) {
+        let artigo = 'o';
+        if (found.name && nomesFemininos.includes(found.name)) artigo = 'a';
+
+        resultEl.className = 'validation-result validation-success';
+
+        if (found.role === 'SDR') {
+            resultEl.innerHTML = `✅ Est${artigo} é ${artigo} SDR <strong>${found.name}</strong> da JD Business Academy.<br><small>Autorizado(a) para atendimento inicial.</small>`;
+        } else if (found.role === 'Closer') {
+            resultEl.innerHTML = `✅ Est${artigo} é ${artigo} Closer <strong>${found.name}</strong> da JD Business Academy.<br><small>Autorizado(a) para fechamento de negócios.</small>`;
+        } else if (found.department) {
+            if (found.name) {
+                resultEl.innerHTML = `✅ <strong>${found.name}</strong> atua no departamento de ${found.department} da JD Business Academy.<br><small>Contato institucional verificado.</small>`;
             } else {
-                result.innerHTML = `✅ Número institucional (${prof.department}).<br><small>Contato oficial JD Business Academy.</small>`;
+                resultEl.innerHTML = `✅ Número institucional do departamento de ${found.department} da JD Business Academy.<br><small>Contato institucional verificado.</small>`;
             }
+        } else {
+            // fallback genérico (caso algum registro venha sem role/department)
+            resultEl.innerHTML = `✅ Número reconhecido: <strong>${found.name || 'Profissional'}</strong>.<br><small>Registro JD Business Academy.</small>`;
         }
     } else {
-        result.className = 'validation-result validation-error';
-        result.innerHTML = `❌ Número não autorizado.<br><small>Verifique ou entre em contato conosco.</small>`;
+        resultEl.className = 'validation-result validation-error';
+        resultEl.innerHTML = `❌ Número não autorizado.<br><small>Verifique o DDD e os dígitos do número ou entre em contato conosco.</small>`;
     }
 }
 
-// 🧭 Suaviza rolagem dos links do menu (sem travar)
+// Mantém rolagem suave do menu (não interfere na validação)
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     anchor.addEventListener('click', e => {
         e.preventDefault();
@@ -841,6 +887,8 @@ document.querySelectorAll('a[href^="#"]').forEach(anchor => {
     });
 });
 </script>
+
 </body>
 </html>
+
 
