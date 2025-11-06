@@ -771,27 +771,29 @@ function standardizePhoneNumber(number) {
     // Mapeamento de números para nomes e cargos
     const professionalData = {
             // SDRs
-            '951967823': { name: 'Alessandra', role: 'SDR' },
             '970396542': { name: 'Cris', role: 'SDR' },
-            '965784950': { name: 'Matheus', role: 'SDR' },
             '951072047': { name: 'Vitor', role: 'SDR' },
             '977275276': { name: 'Luram', role: 'SDR' },
-            '51967823': { name: 'Alessandra', role: 'SDR' },
+            '51940697': { name: 'Luram', role: 'SDR' },
             '51920815': { name: 'Lidia', role: 'SDR' },
             '51072047': { name: 'Vitor', role: 'SDR' },
+            '51942710': { name: 'Laura', role: 'SDR' },
+            '51044616': { name: 'Rose', role: 'SDR' },
+            '51921284': { name: 'Bruna', role: 'SDR' },
 
             // Profissionais de Marketing/Comercial (NOVO)
-            '997775760': { name: 'Vinicius Daud', department: 'Marketing' },
+            '987819893': { name: 'Thiago Vinicius', department: 'Marketing' },
             '948908136': { name: 'Guilherme Oliveira', department: 'Marketing' },
             '959615660': { name: 'Rodrigo Rocha', department: 'Comercial' },
             
             // Closers
             '951072297': { name: 'Rafael', role: 'Closer' },
-            '52865583': { name: 'Naty', role: 'Closer' },
+            '51967823': { name: 'Alessandra', role: 'closer' },
+            '970396542': { name: 'Cris', role: 'Closer' },
+            '951967823': { name: 'Alessandra', role: 'Closer' },
             '51072036': { name: 'Gabriela', role: 'Closer' },
-            '985141640': { name: 'Herbert', role: 'Closer' },
-            '51072553': { name: 'Marcio', role: 'Closer' },
             '51072297': { name: 'Rafael', role: 'Closer' },
+            '52865583': { name: 'Achilley', role: 'Closer' }
             
             // Institucionais
             '42300014': { department: 'Avisos' },
@@ -871,7 +873,7 @@ function validarNumero() {
     });
 
     // Lista de nomes femininos (podemos adicionar mais conforme necessário)
-const nomesFemininos = ['Alessandra', 'Cris', 'Lidia', 'Gabriela', 'Naty'];
+const nomesFemininos = ['Alessandra', 'Cris', 'Lidia', 'Gabriela', 'Laura', 'Rose', 'Bruna', 'Achilley'];
 
 // Função principal de validação
 function validarNumero() {
@@ -914,3 +916,4 @@ function validarNumero() {
 </body>
 
 </html>
+
