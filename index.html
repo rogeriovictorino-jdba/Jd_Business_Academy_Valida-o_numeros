@@ -752,26 +752,17 @@
     </footer>
 
 <script>
-// 🧹 Função para padronizar números de telefone
+// ⚙️ Padroniza número de telefone
 function standardizePhoneNumber(number) {
     let cleaned = number.replace(/\D/g, '');
-    
-    // Remove código do país (55)
-    if (cleaned.startsWith('55')) {
-        cleaned = cleaned.substring(2);
-    }
-    
-    // Remove DDD 11 apenas se o número tiver mais de 9 dígitos
-    if (cleaned.startsWith('11') && cleaned.length > 9) {
-        cleaned = cleaned.substring(2);
-    }
-    
+    if (cleaned.startsWith('55')) cleaned = cleaned.substring(2);
+    if (cleaned.startsWith('0')) cleaned = cleaned.substring(1);
+    if (cleaned.startsWith('11') && cleaned.length > 9) cleaned = cleaned.substring(2);
     return cleaned;
 }
 
-// 📞 Base de dados de profissionais e departamentos
+// 📞 Base de dados
 const professionalData = {
-    // SDRs
     '970396542': { name: 'Cris', role: 'SDR' },
     '951072047': { name: 'Vitor', role: 'SDR' },
     '977275276': { name: 'Luram', role: 'SDR' },
@@ -782,97 +773,74 @@ const professionalData = {
     '51044616': { name: 'Rose', role: 'SDR' },
     '51921284': { name: 'Bruna', role: 'SDR' },
 
-    // Profissionais de Marketing/Comercial
     '987819893': { name: 'Thiago Vinicius', department: 'Marketing' },
     '948908136': { name: 'Guilherme Oliveira', department: 'Marketing' },
     '959615660': { name: 'Rodrigo Rocha', department: 'Comercial' },
-    
-    // Closers
+
     '951072297': { name: 'Rafael', role: 'Closer' },
     '51967823': { name: 'Alessandra', role: 'Closer' },
     '51072036': { name: 'Gabriela', role: 'Closer' },
     '52865583': { name: 'Achilley', role: 'Closer' },
 
-    // Institucionais
     '42300014': { department: 'Avisos' },
     '35494346': { department: 'Comercial' },
     '975636636': { department: 'Marketing' },
     '40632129': { department: 'CS' }
 };
 
-// 🧠 Função para identificar o profissional pelo número
-function identifyProfessional(phone) {
-    const cleanedPhone = standardizePhoneNumber(phone);
-    
-    // Verifica correspondência direta
-    if (professionalData[cleanedPhone]) {
-        return professionalData[cleanedPhone];
-    }
-    
-    // Verifica números com DDD
-    if (cleanedPhone.length > 8) {
-        const numberPart = cleanedPhone.slice(-8); // mantém os últimos 8 dígitos
-        return professionalData[numberPart] || null;
-    }
-    
-    return null;
-}
-
-// 👩‍💼 Lista de nomes femininos (para ajustar o artigo)
 const nomesFemininos = ['Alessandra', 'Cris', 'Lidia', 'Gabriela', 'Laura', 'Rose', 'Bruna', 'Achilley'];
 
-// ✅ Função principal de validação
+// 🧠 Identifica o profissional pelo número
+function identifyProfessional(phone) {
+    const cleaned = standardizePhoneNumber(phone);
+    return professionalData[cleaned] || professionalData[cleaned.slice(-8)] || null;
+}
+
+// ⚡ Validação instantânea (sem rolagem, sem delay)
 function validarNumero() {
-    const phoneInput = document.getElementById('phoneNumber').value;
-    const professional = identifyProfessional(phoneInput);
-    const validationDiv = document.getElementById('validationResult');
-    
-    validationDiv.classList.remove('hidden');
-    
-    if (professional) {
-        let artigo = 'o'; // padrão masculino
-        if (nomesFemininos.includes(professional.name)) artigo = 'a';
+    const input = document.getElementById('phoneNumber');
+    const result = document.getElementById('validationResult');
+    const value = input.value.trim();
 
-        validationDiv.className = 'validation-result validation-success';
+    if (!value) {
+        result.className = 'validation-result validation-error';
+        result.innerHTML = '⚠️ Digite um número para validar.';
+        return;
+    }
 
-        if (professional.role === 'SDR') {
-            validationDiv.innerHTML = `✅ Número válido! Est${artigo} é ${artigo} SDR <strong>${professional.name}</strong> da JD Business Academy.<br>
-                <span style="font-size: 0.9em; opacity: 0.9;">Profissional autorizado para atendimento inicial.</span>`;
-        } 
-        else if (professional.role === 'Closer') {
-            validationDiv.innerHTML = `✅ Número válido! Est${artigo} é ${artigo} Closer <strong>${professional.name}</strong> da JD Business Academy.<br>
-                <span style="font-size: 0.9em; opacity: 0.9;">Profissional autorizado para fechamento de negócios.</span>`;
-        } 
-        else if (professional.department) {
-            if (professional.name) {
-                validationDiv.innerHTML = `✅ Número válido! <strong>${professional.name}</strong> atua no departamento de ${professional.department} da JD Business Academy.<br>
-                    <span style="font-size: 0.9em; opacity: 0.9;">Profissional autorizado.</span>`;
+    const prof = identifyProfessional(value);
+    result.classList.remove('hidden');
+
+    if (prof) {
+        let artigo = nomesFemininos.includes(prof.name) ? 'a' : 'o';
+        result.className = 'validation-result validation-success';
+
+        if (prof.role === 'SDR') {
+            result.innerHTML = `✅ Est${artigo} é ${artigo} SDR <strong>${prof.name}</strong> da JD Business Academy.<br><small>Autorizado(a) para atendimento inicial.</small>`;
+        } else if (prof.role === 'Closer') {
+            result.innerHTML = `✅ Est${artigo} é ${artigo} Closer <strong>${prof.name}</strong> da JD Business Academy.<br><small>Autorizado(a) para fechamento de negócios.</small>`;
+        } else if (prof.department) {
+            if (prof.name) {
+                result.innerHTML = `✅ <strong>${prof.name}</strong> atua no departamento de ${prof.department}.<br><small>Contato oficial JD Business Academy.</small>`;
             } else {
-                validationDiv.innerHTML = `✅ Número institucional do departamento de ${professional.department} da JD Business Academy.<br>
-                    <span style="font-size: 0.9em; opacity: 0.9;">Contato oficial verificado.</span>`;
+                result.innerHTML = `✅ Número institucional (${prof.department}).<br><small>Contato oficial JD Business Academy.</small>`;
             }
         }
     } else {
-        validationDiv.className = 'validation-result validation-error';
-        validationDiv.innerHTML = `❌ Número não autorizado!<br>
-            <span style="font-size: 0.9em; opacity: 0.9;">Este número não consta como oficial da JD Business Academy.</span>`;
+        result.className = 'validation-result validation-error';
+        result.innerHTML = `❌ Número não autorizado.<br><small>Verifique ou entre em contato conosco.</small>`;
     }
-    
-    validationDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-// 🧭 Suaviza rolagem dos links de navegação
+// 🧭 Suaviza rolagem dos links do menu (sem travar)
 document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-    anchor.addEventListener('click', function(e) {
+    anchor.addEventListener('click', e => {
         e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        const target = document.querySelector(anchor.getAttribute('href'));
+        if (target) target.scrollIntoView({ behavior: 'smooth' });
     });
 });
 </script>
-
 </body>
-
 </html>
+
